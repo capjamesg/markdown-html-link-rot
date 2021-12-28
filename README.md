@@ -18,15 +18,15 @@ All changes are logged to a log file whose name is printed to the console when t
 
 You can optionally use the --webhook flag to send a notification with a JSON payload to a server when the program has finished running. The payload looks like this:
 
-{
-    "message": "
-        Cali has identified 0 broken links. These links have been replaced with archived versions.
+    {
+        "message": "
+            Cali has identified 0 broken links. These links have been replaced with archived versions.
 
-        See below for the changes made.
+            See below for the changes made.
 
-        [List of broken links, if applicable]
-    "
-}
+            [List of broken links, if applicable]
+        "
+    }
 
 ## Technologies
 
@@ -35,6 +35,7 @@ The following libraries and technologies are used in this project:
 - Ruby
 - nokogiri
 - logger
+- dotenv
 - HTTParty
 
 ## Contributors
