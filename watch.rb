@@ -27,6 +27,7 @@ OptionParser.new do |option|
     option.on("-d", "--domain DOMAIN", "Domain to use") do |d| options[:domain] = d end
     option.on("-h", "--help", "Show this message") do puts option; exit end
     option.on("-w", "--webhook", "Send webhook when link program has completed") do |w| options[:webhook] = w end
+    option.on("-a", "--webhook-auth KEY", "Key to be sent in an Authorization header to Webhook") do |a| options[:key] = a end
     option.on("-e", "--include DIR", "Folders to process, separated by commas") do |e| options[:exclude] = e end
 end.parse!
 
@@ -75,6 +76,8 @@ def get_archive_link(anchor)
         
         if anchor.start_with?("/")
             anchor = "https://#{@domain}#{anchor.rstrip}"
+        else
+            return nil, nil
         end
     else
         is_site_link = false
@@ -204,32 +207,36 @@ end
 # execute all threads
 threads.each { |thr| thr.join }
 
-to_send = """
-Cali has identified #{@substitutions.length} broken links. These links have been replaced with archived versions.
+if @substitutions.length > 0
+    to_send = """
+    The link rot bot has identified #{@substitutions.length} broken links. These links have been replaced with archived versions.
 
-See below for the changes made.
+    See below for the changes made.
 
-#{@substitutions.map { |s| "* #{s[0]} -> #{s[1]}" }.join("\n")}
-"""
+    #{@substitutions.map { |s| "* #{s[0]} -> #{s[1]}" }.join("\n")}
+    """
+else
+    to_send = "The link rot bot has identified no broken links."
+end
 
 if @failed_substitutions.length > 0
-    to_send += "\n\nThe following links could not be archived:\n\n"
+    to_send += "\n\n#{@failed_substitutions.length} links could not be archived. These are:\n\n"
     to_send += @failed_substitutions.map { |s| "* #{s}" }.join("\n")
 end
 
 if options[:webhook] != nil
     headers = {
-        "Authorization" => "Basic #{ENV["CALI_API_KEY"]}"
+        "Authorization" => "Basic #{options[:key]}"
     }
 
     message = {
         "message" => to_send
     }
 
-    req = HTTParty.post("https://cali.jamesg.blog", body: message, headers: headers)
+    req = HTTParty.post(options[:webhook], body: message, headers: headers)
 
     if req.code == 200
-        puts "Result sent to Cali"
+        puts "Result sent to webhook"
     else
         puts "Error: #{req.code}"
     end
