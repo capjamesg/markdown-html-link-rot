@@ -1,5 +1,4 @@
 require "optparse"
-require "ostruct"
 require "nokogiri"
 require "httparty"
 require "logger"
