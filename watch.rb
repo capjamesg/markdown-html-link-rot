@@ -55,15 +55,6 @@ headers = {
 @substitutions = []
 @failed_substitutions = []
 
-directories_to_include = [
-    "_posts",
-    "_likes",
-    "_watches",
-    "_bookmarks",
-    "_reposts",
-    "templates"
-]
-
 # add user specified directories to list of directories to include
 if options.key?(:exclude)
     directories_to_include << options[:exclude].split(",")
@@ -122,6 +113,20 @@ def get_archive_link(anchor)
         @logger.info("Error: #{anchor} could not be retrieved from the Wayback Machine")
         @failed_substitutions << anchor
 
+        @logger.info("Submitting #{anchor} for archiving on the Wayback Machine")
+
+        begin
+            req = HTTParty.get("https://web.archive.org/save/https://#{anchor}")
+        rescue
+            @logger.info("Error: #{anchor} could not be submitted for archiving on the Wayback Machine")
+        end
+
+        if req.code == 200
+            @logger.info("Successfully submitted #{anchor} for archiving on the Wayback Machine")
+        else
+            @logger.info("Error: #{anchor} could not be submitted for archiving on the Wayback Machine")
+        end
+
         return nil, nil
     end
 
@@ -132,14 +137,10 @@ def get_archive_link(anchor)
     return anchor, closest_link
 end
 
-markdown_files = Dir.glob("**/*.md") + Dir.glob("**/*.html")
+markdown_files = Dir.glob("#{options[:file]}/**/*.md") + Dir.glob("#{options[:file]}/**/*.html")
 
 markdown_files.each do |f|
     threads << Thread.new {
-        if !directories_to_include.include?(File.dirname(f))
-            next
-        end
-
         changed = false
 
         page = File.open(f)
